@@ -92,6 +92,7 @@ void setup() {
       while (slaidsIterator.hasNext ()) {
         JsonNode slaidNode = slaidsIterator.next();
         dataArray.add(slaidNode.floatValue());
+        
       }
       System.out.println("dataArray.size() = "+dataArray.size());
     }
@@ -140,19 +141,25 @@ void draw() {
   if (dataArray!=null&&dataArray.size()!=0) {
     for (int i = 4; i < dataArray.size (); i+=4) {
       stroke(255);
-      line(dataArray.get(i-4), dataArray.get(i+1-4), dataArray.get(i+2-4), dataArray.get(i), dataArray.get(i+1), dataArray.get(i+2));
+      
+      line(dataArray.get(i-4),dataArray.get(i+2-4),  dataArray.get(i+1-4), dataArray.get(i), dataArray.get(i+2), dataArray.get(i+1));
     }
 
     noStroke();
-    pushMatrix();
+    
     int index = ((frameCount*10)%dataArray.size())/4;
-    println("index = "+index);
-    translate(dataArray.get(index*4), dataArray.get(index*4+1), dataArray.get(index*4+2));
+    if(index*4+2<dataArray.size()){
+    pushMatrix();
+    //println("index = "+index);
+    System.out.println(dataArray.get(index*4)+","+ dataArray.get(index*4+1)+","+ dataArray.get(index*4+2));
+    
+    translate(dataArray.get(index*4),dataArray.get(index*4+2), dataArray.get(index*4+1));
     float yaw = dataArray.get(index+3);
     rotateY(yaw);
     fill(map(index*4, 0, dataArray.size(), 255, 50), 255, map(index*4, 0, dataArray.size(), 50, 255));
     box(0.1);
     popMatrix();
+    }
   }
 }
 
@@ -215,7 +222,7 @@ class geoMapSketch extends PApplet {
     Location berlinLocation = new Location(52.5, 13.4);
     ScreenPosition posBerlin = map.getScreenPosition(berlinLocation);
 
-    println(posBerlin);
+    //println(posBerlin);
     stroke(20, 20, 20, 100);
     fill(20, 20, 20, 100);
 
