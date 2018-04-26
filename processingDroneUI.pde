@@ -34,7 +34,6 @@ import de.fhpotsdam.unfolding.providers.*;
 //split screen
 PGraphics skeletonModel;
 PGraphics videoStream;
-PGraphics map;
 
 int skeletonModel_w = 640;
 int skeletonModel_h = 800;
@@ -56,6 +55,9 @@ float drawingScale = 50;
 
 int a = 1;
 
+UnfoldingMap unfoldingMap;
+PImage plane;
+
 PImage mapImage;
 PImage videoFrame;
 ArrayList<Float> dataArray = new ArrayList<Float>();
@@ -68,7 +70,6 @@ void setup() {
 
   skeletonModel = createGraphics(skeletonModel_w, skeletonModel_h, OPENGL);
   videoStream = createGraphics(videoStream_w, videoStream_h, P2D);
-  map = createGraphics(map_w, map_h, P2D);
 
 
   mapImage = loadImage("map.png");
@@ -107,7 +108,7 @@ void setup() {
     .setFragmentSize(65000)
     .setThrottleRate(1)
     .setQueueLength(1), 
-    new RosListenDelegate() {
+  new RosListenDelegate() {
     public void receive(JsonNode data, String stringRep) {
       ArrayNode slaidsNode = (ArrayNode)  data.get("msg").get("data");
       Iterator<JsonNode> slaidsIterator = slaidsNode.elements();
@@ -129,7 +130,7 @@ void setup() {
     .setFragmentSize(50000)
     .setThrottleRate(1)
     .setQueueLength(1), 
-    new RosListenDelegate() {
+  new RosListenDelegate() {
 
     public void receive(JsonNode data, String stringRep) {
 
@@ -153,6 +154,14 @@ void setup() {
     }
   }
   );
+
+
+
+  unfoldingMap = new UnfoldingMap(this, skeletonModel_w, videoStream_h, map_w, map_h, new OpenStreetMap.OpenStreetMapProvider());
+  unfoldingMap.zoomAndPanTo(new Location(52.5f, 13.4f), 10);
+  MapUtils.createDefaultEventDispatcher(this, unfoldingMap);
+
+  plane = loadImage("plane4.png");
 }
 
 
@@ -207,7 +216,6 @@ void draw() {
 
 
   //video stream
-
   videoStream.beginDraw();
   if (videoFrame!=null)
     videoStream.image(videoFrame, 0, 0, videoStream_w, videoStream_h);
@@ -218,15 +226,29 @@ void draw() {
 
 
   //map
-  map.beginDraw();
-  map.image(mapImage, 0, 0, map_w, map_h);
-  map.endDraw();
+  //map.background(100);
+  unfoldingMap.draw();
 
+  Location berlinLocation = new Location(52.5, 13.4);
+  ScreenPosition posBerlin = unfoldingMap.getScreenPosition(berlinLocation);
+
+  //println(posBerlin);
+  stroke(20, 20, 20, 100);
+  fill(20, 20, 20, 100);
+
+  pushMatrix();
+
+  translate(posBerlin.x, posBerlin.y);
+  rotate(0.1*frameCount);
+  imageMode (CENTER); 
+  image(plane, 0, 0);
+  imageMode (CORNER); 
+  popMatrix();
 
 
   image(skeletonModel, 0, 0);
   image(videoStream, skeletonModel_w, 0);
-  image(map, skeletonModel_w, videoStream_h);
+  //image(map, skeletonModel_w, videoStream_h,map_w,map_h);
 }
 
 void rectGrid(int size, int tilesize, float y) {
@@ -248,3 +270,4 @@ void rectGrid(int size, int tilesize, float y) {
     }
   }
 }
+
