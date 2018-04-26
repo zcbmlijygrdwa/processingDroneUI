@@ -6,7 +6,7 @@ import java.io.*;
 import java.util.Iterator; 
 import javax.imageio.ImageIO;
 
-//import java.util.Base64;
+import java.util.Base64;
 import ros.Publisher;
 import ros.RosBridge;
 import ros.RosListenDelegate;
@@ -56,7 +56,8 @@ float drawingScale = 50;
 
 int a = 1;
 
-PImage img;
+PImage mapImage;
+PImage videoFrame;
 ArrayList<Float> dataArray = new ArrayList<Float>();
 void setup() {
 
@@ -70,7 +71,7 @@ void setup() {
   map = createGraphics(map_w, map_h, P2D);
 
 
-  img = loadImage("map.png");
+  mapImage = loadImage("map.png");
 
 
 
@@ -103,21 +104,52 @@ void setup() {
 
   bridge.subscribe(SubscriptionRequestMsg.generate("/xyzr")
     .setType("std_msgs/Float32MultiArray")
-    .setFragmentSize(50000)
+    .setFragmentSize(65000)
     .setThrottleRate(1)
     .setQueueLength(1), 
-  new RosListenDelegate() {
-
+    new RosListenDelegate() {
     public void receive(JsonNode data, String stringRep) {
       ArrayNode slaidsNode = (ArrayNode)  data.get("msg").get("data");
       Iterator<JsonNode> slaidsIterator = slaidsNode.elements();
-      dataArray.clear();
+      //dataArray.clear();
       while (slaidsIterator.hasNext ()) {
         JsonNode slaidNode = slaidsIterator.next();
         dataArray.add(slaidNode.floatValue());
-
       }
       System.out.println("dataArray.size() = "+dataArray.size());
+    }
+  }
+  );
+
+
+
+
+  bridge.subscribe(SubscriptionRequestMsg.generate("/webcam/image_raw")
+    .setType("sensor_msgs/Image")
+    .setFragmentSize(50000)
+    .setThrottleRate(1)
+    .setQueueLength(1), 
+    new RosListenDelegate() {
+
+    public void receive(JsonNode data, String stringRep) {
+
+      int h = data.get("msg").get("height").asInt();
+      int w = data.get("msg").get("width").asInt();
+      String encoding = data.get("msg").get("encoding").textValue();
+
+      ObjectMapper om = new ObjectMapper();
+      final ObjectWriter writer = om.writer();
+
+      // Use the writer for thread safe access.
+      try {
+        byte[] imageData = Base64.getDecoder().decode(data.get("msg").get("data").textValue());
+        ToPImage tpi = new ToPImage(h, w, encoding, imageData);
+        videoFrame = tpi.getPImage();
+      }
+
+      catch(Exception e) {
+        println(e.toString());
+      }
     }
   }
   );
@@ -125,6 +157,7 @@ void setup() {
 
 
 void draw() {
+  //println(frameRate);
   //skeleton model
   skeletonModel.beginDraw();
   skeletonModel.background(0);
@@ -176,7 +209,8 @@ void draw() {
   //video stream
 
   videoStream.beginDraw();
-  videoStream.image(img, 0, 0, videoStream_w, videoStream_h);
+  if (videoFrame!=null)
+    videoStream.image(videoFrame, 0, 0, videoStream_w, videoStream_h);
   videoStream.endDraw();
 
 
@@ -185,7 +219,7 @@ void draw() {
 
   //map
   map.beginDraw();
-  map.image(img, 0, 0, map_w, map_h);
+  map.image(mapImage, 0, 0, map_w, map_h);
   map.endDraw();
 
 
