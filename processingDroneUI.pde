@@ -200,8 +200,6 @@ void draw() {
   for (int i = 0; i<selectedPoints.size (); i++) {
     skeletonModel.pushMatrix();
     float[] tempLoc = selectedPoints.get(i);
-
-    println("tempLoc = "+tempLoc[0]+","+tempLoc[1]+","+tempLoc[2]);
     skeletonModel.translate(tempLoc[0], tempLoc[1], tempLoc[2]);
     skeletonModel.stroke(0);
     skeletonModel.box(2);
@@ -336,13 +334,40 @@ void keyPressed() {
   
   if (key == 'l') {
     //locate, refresh for current GPS, update map
-
     unfoldingMap.zoomAndPanTo(new Location(34.4131f, -119.845f), 10);
-     droneLocation = new Location(34.4184916f, -119.8566171f);
+    droneLocation = new Location(34.4184916f, -119.8566171f);
     
     println("droneMapPosition = "+droneMapPosition);
   }
   
+  
+  
+  
+  
+  if(key=='1'){
+    //go to front view
+    
+    globalPtich = 0.2108;
+    globalYaw = 0;
+    
+  }
+  
+    if(key=='2'){
+    //go to side view
+    
+    globalPtich = 0.2108;
+    globalYaw = PI/2.0f;
+    
+  }
+  
+  
+  if(key=='3'){
+    //go to top view
+    
+    globalPtich = PI/2.0f;
+    globalYaw = 0;
+    
+  }
   
   
   
