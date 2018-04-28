@@ -33,6 +33,8 @@ import de.fhpotsdam.unfolding.providers.*;
 
 boolean ifRosBridge = false;
 
+boolean isEditing = false;
+
 //split screen
 PGraphics skeletonModel;
 PGraphics videoStream;
@@ -44,10 +46,6 @@ int videoStream_h = 400;
 int map_w = 640;
 int map_h = 400;
 
-
-
-
-PVector gridPos = new PVector(0, 0, 0);//the position of the grid (it moves with the camera to make it look infinite)
 
 PeasyCam cam;
 float globalPtich = 0;
@@ -174,42 +172,44 @@ void draw() {
   //println(frameRate);
   //skeleton model
   skeletonModel.beginDraw();
-  skeletonModel.background(0);
+  if (isEditing) {
+    skeletonModel.background(backGourd_edit);
+  } else {
+    skeletonModel.background(backGourd_review);
+  }
+
   skeletonModel.rotateX(PI-globalPtich);
   skeletonModel.rotateY(PI-globalYaw);
 
   skeletonModel.strokeWeight(1);
   skeletonModel.pushMatrix();
-  skeletonModel.translate(gridPos.x, gridPos.y, gridPos.z);//everything that apears to be folowing the the center of the grid, goes after here
   rectGrid(25, (int)(1*drawingScale), 0);//a rectangle grid can be a lot bigger than a boxgrid, without caursing lag
   skeletonModel.popMatrix();
-  
-  
+
+
   skeletonModel.scale(drawingScale);
   skeletonModel.stroke(0);
   skeletonModel.strokeWeight(1/drawingScale);
   skeletonModel.fill(255);
   skeletonModel.box(1);
 
-println("selectedPoints.size () = "+selectedPoints.size());
+  println("selectedPoints.size () = "+selectedPoints.size());
 
-  for (int i = 0; i<selectedPoints.size(); i++) {
+  for (int i = 0; i<selectedPoints.size (); i++) {
     skeletonModel.pushMatrix();
     float[] tempLoc = selectedPoints.get(i);
-    
+
     println("tempLoc = "+tempLoc[0]+","+tempLoc[1]+","+tempLoc[2]);
     skeletonModel.translate(tempLoc[0], tempLoc[1], tempLoc[2]);
     skeletonModel.stroke(0);
     skeletonModel.box(2);
     skeletonModel.popMatrix();
-    
-skeletonModel.stroke(255);
-    if(i!=0){
-      float[] tempLoc_last = selectedPoints.get(i-1);
-     skeletonModel.line(tempLoc[0], tempLoc[1], tempLoc[2], tempLoc_last[0], tempLoc_last[1], tempLoc_last[2]); 
-    }
-    
 
+    skeletonModel.stroke(255);
+    if (i!=0) {
+      float[] tempLoc_last = selectedPoints.get(i-1);
+      skeletonModel.line(tempLoc[0], tempLoc[1], tempLoc[2], tempLoc_last[0], tempLoc_last[1], tempLoc_last[2]);
+    }
   }
 
   if (dataArray!=null&&dataArray.size()!=0) {
@@ -284,8 +284,11 @@ void rectGrid(int size, int tilesize, float y) {
     for (float z = -size/2; z <= size/2; z++) {
       //run two for loops, cycling through 10 different positions of rectangles
       skeletonModel.pushMatrix();
-
-      skeletonModel.stroke(0, 255, 0, map(dist(-gridPos.x, -gridPos.z, x*tilesize, z*tilesize), 0, size/2*tilesize, 255, 0));//the rectangles close to you, are clear, while the ones farther from you, are much fainter
+      if (isEditing) {
+        skeletonModel.stroke(groundMesh_edit, map(dist(0, 0, x*tilesize, z*tilesize), 0, size/2*tilesize, 255, 0));//the rectangles close to you, are clear, while the ones farther from you, are much fainter
+      } else {
+        skeletonModel.stroke(groundMesh_review, map(dist(0, 0, x*tilesize, z*tilesize), 0, size/2*tilesize, 255, 0));//the rectangles close to you, are clear, while the ones farther from you, are much fainter
+      }
       //uncomment the next line:
       //stroke(0,255,0);
       // to see how the infinity thing works
@@ -301,14 +304,25 @@ void rectGrid(int size, int tilesize, float y) {
 
 void keyPressed() {
   if (key=='r') {
-    println("cam.getDistance = "+cam.getDistance());
-    println("globalPtich = "+globalPtich);
-    println("globalYaw = "+globalYaw);
-    float R = (float)cam.getDistance()/drawingScale;
-    float newZ = R*cos(globalYaw)*cos(globalPtich);
-    float newY = R*sin(globalPtich);
-    float newX = R*cos(globalPtich)*sin(globalYaw);
-    selectedPoints.add(new float[]{newX,newY,newZ});
+    if (isEditing) {
+      println("cam.getDistance = "+cam.getDistance());
+      println("globalPtich = "+globalPtich);
+      println("globalYaw = "+globalYaw);
+      float R = (float)cam.getDistance()/drawingScale;
+      float newZ = R*cos(globalYaw)*cos(globalPtich);
+      float newY = R*sin(globalPtich);
+      float newX = R*cos(globalPtich)*sin(globalYaw);
+      selectedPoints.add(new float[] {
+        newX, newY, newZ
+      }
+      );
+    }
+  }
+
+
+  if (key == 'e') {
+    isEditing = !isEditing;
+    println("isEditing = "+isEditing);
   }
 }
 
