@@ -56,6 +56,8 @@ float drawingScale = 50;
 int a = 1;
 
 UnfoldingMap unfoldingMap;
+ScreenPosition droneMapPosition;
+Location droneLocation;
 PImage plane;
 
 PImage mapImage;
@@ -193,7 +195,7 @@ void draw() {
   skeletonModel.fill(255);
   skeletonModel.box(1);
 
-  println("selectedPoints.size () = "+selectedPoints.size());
+  //println("selectedPoints.size () = "+selectedPoints.size());
 
   for (int i = 0; i<selectedPoints.size (); i++) {
     skeletonModel.pushMatrix();
@@ -256,21 +258,27 @@ void draw() {
   //map.background(100);
   unfoldingMap.draw();
 
-  Location berlinLocation = new Location(52.5, 13.4);
-  ScreenPosition posBerlin = unfoldingMap.getScreenPosition(berlinLocation);
+  
 
-  //println(posBerlin);
   stroke(20, 20, 20, 100);
   fill(20, 20, 20, 100);
-
+  if(droneLocation!=null){
+    droneMapPosition = unfoldingMap.getScreenPosition(droneLocation);
+  //println(droneMapPosition);
   pushMatrix();
-
-  translate(posBerlin.x, posBerlin.y);
-  rotate(0.1*frameCount);
+  translate(droneMapPosition.x, droneMapPosition.y);
+  rotate(PlanePoseEmulator.getInstance().nextRotation());
   imageMode (CENTER); 
   image(plane, 0, 0);
   imageMode (CORNER); 
-  popMatrix();
+  popMatrix(); 
+}
+
+
+
+
+
+
 
 
   image(skeletonModel, 0, 0);
@@ -321,8 +329,22 @@ void keyPressed() {
 
 
   if (key == 'e') {
+    //switch between reveiw and edit mode
     isEditing = !isEditing;
     println("isEditing = "+isEditing);
   }
+  
+  if (key == 'l') {
+    //locate, refresh for current GPS, update map
+
+    unfoldingMap.zoomAndPanTo(new Location(34.4131f, -119.845f), 10);
+     droneLocation = new Location(34.4184916f, -119.8566171f);
+    
+    println("droneMapPosition = "+droneMapPosition);
+  }
+  
+  
+  
+  
 }
 

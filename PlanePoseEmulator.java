@@ -26,7 +26,7 @@ Random rand;
   
   
   public float nextRotation(){
-    yaw+=(rand.nextFloat()-0.5f)*0.001f;
+    yaw+=(rand.nextFloat()-0.5f)*0.05f;
     return yaw;
   }
   
