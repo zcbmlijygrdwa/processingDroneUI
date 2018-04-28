@@ -189,9 +189,6 @@ void draw() {
     globalYaw = pid_globalYaw.process(globalYaw);
   }
 
-println("pid_globalPitch.isOn() = "+pid_globalPitch.isOn()); 
-println("pid_globalYaw.isOn() = "+pid_globalYaw.isOn()); 
-
   //println(frameRate);
   //skeleton model
   skeletonModel.beginDraw();
@@ -223,8 +220,19 @@ println("pid_globalYaw.isOn() = "+pid_globalYaw.isOn());
     float[] tempLoc = selectedPoints.get(i);
     skeletonModel.translate(tempLoc[0], tempLoc[1], tempLoc[2]);
     skeletonModel.stroke(0);
+    
+    double mouseObjectDistance = Math.sqrt(sq(mouseX-skeletonModel.screenX(0, 0, 0))+sq(mouseY-skeletonModel.screenY(0, 0, 0)));
+   
+    if(mouseObjectDistance<20){
+      skeletonModel.fill(255,0,0);
+    }
+    else{
+      skeletonModel.fill(255);
+    }
+
     skeletonModel.box(2);
     skeletonModel.popMatrix();
+
 
     skeletonModel.stroke(255);
     if (i!=0) {
@@ -232,6 +240,9 @@ println("pid_globalYaw.isOn() = "+pid_globalYaw.isOn());
       skeletonModel.line(tempLoc[0], tempLoc[1], tempLoc[2], tempLoc_last[0], tempLoc_last[1], tempLoc_last[2]);
     }
   }
+
+
+
 
   if (dataArray!=null&&dataArray.size()!=0) {
     for (int i = 4; i < dataArray.size (); i+=4) {
