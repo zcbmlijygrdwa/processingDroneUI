@@ -48,8 +48,12 @@ int map_h = 400;
 
 
 PeasyCam cam;
-float globalPtich = 0;
+float globalPitch = 0;
 float globalYaw = 0;
+
+PIDController pid_globalPitch;
+PIDController pid_globalYaw;
+
 
 float drawingScale = 50;
 
@@ -85,18 +89,22 @@ void setup() {
   cam.setMaximumDistance(3000);
   cam.setLeftDragHandler(new PeasyDragHandler() {
     public void handleDrag(final double dx, final double dy) {
-      if (globalPtich+dy*0.01>=0&&globalPtich+dy*0.01<=PI/2.0) {
-        globalPtich+=dy*0.008;
+      if (globalPitch+dy*0.01>=0&&globalPitch+dy*0.01<=PI/2.0) {
+        globalPitch+=dy*0.008;
       }
       globalYaw+=dx*0.008;
     }
   }
   );
 
+  pid_globalPitch = new PIDController(0.1, 0.2, 0);
+  pid_globalYaw = new PIDController(0.1, 0.2, 0);
+
+
 
   int trajectoryPlanningSampleRate = 100; //Hz
 
-  println(a); 
+  
 
   Publisher p;
 
@@ -171,6 +179,19 @@ void setup() {
 
 
 void draw() {
+
+  //controllers update
+  if (pid_globalPitch.isOn()) {
+    globalPitch = pid_globalPitch.process(globalPitch);
+  }
+
+  if (pid_globalYaw.isOn()) {
+    globalYaw = pid_globalYaw.process(globalYaw);
+  }
+
+println("pid_globalPitch.isOn() = "+pid_globalPitch.isOn()); 
+println("pid_globalYaw.isOn() = "+pid_globalYaw.isOn()); 
+
   //println(frameRate);
   //skeleton model
   skeletonModel.beginDraw();
@@ -180,7 +201,7 @@ void draw() {
     skeletonModel.background(backGourd_review);
   }
 
-  skeletonModel.rotateX(PI-globalPtich);
+  skeletonModel.rotateX(PI-globalPitch);
   skeletonModel.rotateY(PI-globalYaw);
 
   skeletonModel.strokeWeight(1);
@@ -256,21 +277,21 @@ void draw() {
   //map.background(100);
   unfoldingMap.draw();
 
-  
+
 
   stroke(20, 20, 20, 100);
   fill(20, 20, 20, 100);
-  if(droneLocation!=null){
+  if (droneLocation!=null) {
     droneMapPosition = unfoldingMap.getScreenPosition(droneLocation);
-  //println(droneMapPosition);
-  pushMatrix();
-  translate(droneMapPosition.x, droneMapPosition.y);
-  rotate(PlanePoseEmulator.getInstance().nextRotation());
-  imageMode (CENTER); 
-  image(plane, 0, 0);
-  imageMode (CORNER); 
-  popMatrix(); 
-}
+    //println(droneMapPosition);
+    pushMatrix();
+    translate(droneMapPosition.x, droneMapPosition.y);
+    rotate(PlanePoseEmulator.getInstance().nextRotation());
+    imageMode (CENTER); 
+    image(plane, 0, 0);
+    imageMode (CORNER); 
+    popMatrix();
+  }
 
 
 
@@ -312,12 +333,12 @@ void keyPressed() {
   if (key=='r') {
     if (isEditing) {
       println("cam.getDistance = "+cam.getDistance());
-      println("globalPtich = "+globalPtich);
+      println("globalPitch = "+globalPitch);
       println("globalYaw = "+globalYaw);
       float R = (float)cam.getDistance()/drawingScale;
-      float newZ = R*cos(globalYaw)*cos(globalPtich);
-      float newY = R*sin(globalPtich);
-      float newX = R*cos(globalPtich)*sin(globalYaw);
+      float newZ = R*cos(globalYaw)*cos(globalPitch);
+      float newY = R*sin(globalPitch);
+      float newX = R*cos(globalPitch)*sin(globalYaw);
       selectedPoints.add(new float[] {
         newX, newY, newZ
       }
@@ -331,45 +352,45 @@ void keyPressed() {
     isEditing = !isEditing;
     println("isEditing = "+isEditing);
   }
-  
+
   if (key == 'l') {
     //locate, refresh for current GPS, update map
     unfoldingMap.zoomAndPanTo(new Location(34.4131f, -119.845f), 10);
     droneLocation = new Location(34.4184916f, -119.8566171f);
-    
+
     println("droneMapPosition = "+droneMapPosition);
   }
-  
-  
-  
-  
-  
-  if(key=='1'){
+
+
+
+
+
+  if (key=='1') {
     //go to front view
-    
-    globalPtich = 0.2108;
-    globalYaw = 0;
-    
+
+    //    globalPitch = 0.2108;
+    //    globalYaw = 0;
+    pid_globalPitch.setReference(0.2108f);
+    pid_globalYaw.setReference(0);
   }
-  
-    if(key=='2'){
+
+  if (key=='2') {
     //go to side view
-    
-    globalPtich = 0.2108;
-    globalYaw = PI/2.0f;
-    
+
+    //    globalPitch = 0.2108;
+    //    globalYaw = PI/2.0f;
+    pid_globalPitch.setReference(0.2108f);
+    pid_globalYaw.setReference(PI/2.0f);
   }
-  
-  
-  if(key=='3'){
+
+
+  if (key=='3') {
     //go to top view
-    
-    globalPtich = PI/2.0f;
-    globalYaw = 0;
-    
+
+    //    globalPitch = PI/2.0f;
+    //    globalYaw = 0;
+    pid_globalPitch.setReference(PI/2.0f);
+    pid_globalYaw.setReference(0);
   }
-  
-  
-  
 }
 
