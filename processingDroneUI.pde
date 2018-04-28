@@ -6,7 +6,7 @@ import java.io.*;
 import java.util.Iterator; 
 import javax.imageio.ImageIO;
 
-import java.util.Base64;
+//import java.util.Base64;
 import ros.Publisher;
 import ros.RosBridge;
 import ros.RosListenDelegate;
@@ -30,6 +30,8 @@ import de.fhpotsdam.unfolding.utils.*;
 import de.fhpotsdam.unfolding.providers.*;
 
 
+
+boolean ifRosBridge = false;
 
 //split screen
 PGraphics skeletonModel;
@@ -61,6 +63,11 @@ PImage plane;
 PImage mapImage;
 PImage videoFrame;
 ArrayList<Float> dataArray = new ArrayList<Float>();
+
+ArrayList<float[]> selectedPoints = new ArrayList<float[]>();
+
+
+
 void setup() {
 
   // need to run: roslaunch rosbridge_server rosbridge_websocket.launch 
@@ -71,13 +78,11 @@ void setup() {
   skeletonModel = createGraphics(skeletonModel_w, skeletonModel_h, OPENGL);
   videoStream = createGraphics(videoStream_w, videoStream_h, P2D);
 
-
   mapImage = loadImage("map.png");
-
-
 
   cam = new PeasyCam(this, skeletonModel, 800);
   cam.setMinimumDistance(360);
+  cam.setMaximumDistance(3000);
   cam.setLeftDragHandler(new PeasyDragHandler() {
     public void handleDrag(final double dx, final double dy) {
       if (globalPtich+dy*0.01>=0&&globalPtich+dy*0.01<=PI/2.0) {
@@ -98,62 +103,62 @@ void setup() {
   PrimitiveMsg pp;
 
 
-  String URI = "ws://localhost:9090";
+  if (ifRosBridge) {
 
-  RosBridge bridge = new RosBridge();
-  bridge.connect(URI, true);
+    String URI = "ws://localhost:9090";
 
-  bridge.subscribe(SubscriptionRequestMsg.generate("/xyzr")
-    .setType("std_msgs/Float32MultiArray")
-    .setFragmentSize(65000)
-    .setThrottleRate(1)
-    .setQueueLength(1), 
-  new RosListenDelegate() {
-    public void receive(JsonNode data, String stringRep) {
-      ArrayNode slaidsNode = (ArrayNode)  data.get("msg").get("data");
-      Iterator<JsonNode> slaidsIterator = slaidsNode.elements();
-      //dataArray.clear();
-      while (slaidsIterator.hasNext ()) {
-        JsonNode slaidNode = slaidsIterator.next();
-        dataArray.add(slaidNode.floatValue());
-      }
-      System.out.println("dataArray.size() = "+dataArray.size());
-    }
-  }
-  );
+    RosBridge bridge = new RosBridge();
+    bridge.connect(URI, true);
 
-
-
-
-  bridge.subscribe(SubscriptionRequestMsg.generate("/webcam/image_raw")
-    .setType("sensor_msgs/Image")
-    .setFragmentSize(50000)
-    .setThrottleRate(1)
-    .setQueueLength(1), 
-  new RosListenDelegate() {
-
-    public void receive(JsonNode data, String stringRep) {
-
-      int h = data.get("msg").get("height").asInt();
-      int w = data.get("msg").get("width").asInt();
-      String encoding = data.get("msg").get("encoding").textValue();
-
-      ObjectMapper om = new ObjectMapper();
-      final ObjectWriter writer = om.writer();
-
-      // Use the writer for thread safe access.
-      try {
-        byte[] imageData = Base64.getDecoder().decode(data.get("msg").get("data").textValue());
-        ToPImage tpi = new ToPImage(h, w, encoding, imageData);
-        videoFrame = tpi.getPImage();
-      }
-
-      catch(Exception e) {
-        println(e.toString());
+    bridge.subscribe(SubscriptionRequestMsg.generate("/xyzr")
+      .setType("std_msgs/Float32MultiArray")
+      .setFragmentSize(65000)
+      .setThrottleRate(1)
+      .setQueueLength(1), 
+    new RosListenDelegate() {
+      public void receive(JsonNode data, String stringRep) {
+        ArrayNode slaidsNode = (ArrayNode)  data.get("msg").get("data");
+        Iterator<JsonNode> slaidsIterator = slaidsNode.elements();
+        //dataArray.clear();
+        while (slaidsIterator.hasNext ()) {
+          JsonNode slaidNode = slaidsIterator.next();
+          dataArray.add(slaidNode.floatValue());
+        }
+        System.out.println("dataArray.size() = "+dataArray.size());
       }
     }
+    );
+
+    bridge.subscribe(SubscriptionRequestMsg.generate("/webcam/image_raw")
+      .setType("sensor_msgs/Image")
+      .setFragmentSize(50000)
+      .setThrottleRate(1)
+      .setQueueLength(1), 
+    new RosListenDelegate() {
+
+      public void receive(JsonNode data, String stringRep) {
+
+        int h = data.get("msg").get("height").asInt();
+        int w = data.get("msg").get("width").asInt();
+        String encoding = data.get("msg").get("encoding").textValue();
+
+        ObjectMapper om = new ObjectMapper();
+        final ObjectWriter writer = om.writer();
+
+        // Use the writer for thread safe access.
+        try {
+          //byte[] imageData = Base64.getDecoder().decode(data.get("msg").get("data").textValue());
+          //ToPImage tpi = new ToPImage(h, w, encoding, imageData);
+          //videoFrame = tpi.getPImage();
+        }
+
+        catch(Exception e) {
+          println(e.toString());
+        }
+      }
+    }
+    );
   }
-  );
 
 
 
@@ -177,14 +182,36 @@ void draw() {
   skeletonModel.pushMatrix();
   skeletonModel.translate(gridPos.x, gridPos.y, gridPos.z);//everything that apears to be folowing the the center of the grid, goes after here
   rectGrid(25, (int)(1*drawingScale), 0);//a rectangle grid can be a lot bigger than a boxgrid, without caursing lag
-
-
   skeletonModel.popMatrix();
+  
+  
   skeletonModel.scale(drawingScale);
   skeletonModel.stroke(0);
   skeletonModel.strokeWeight(1/drawingScale);
   skeletonModel.fill(255);
   skeletonModel.box(1);
+
+println("selectedPoints.size () = "+selectedPoints.size());
+
+  for (int i = 0; i<selectedPoints.size(); i++) {
+    skeletonModel.pushMatrix();
+    float[] tempLoc = selectedPoints.get(i);
+    
+    println("tempLoc = "+tempLoc[0]+","+tempLoc[1]+","+tempLoc[2]);
+    skeletonModel.translate(tempLoc[0], tempLoc[1], tempLoc[2]);
+    skeletonModel.stroke(0);
+    skeletonModel.box(2);
+    skeletonModel.popMatrix();
+    
+skeletonModel.stroke(255);
+    if(i!=0){
+      float[] tempLoc_last = selectedPoints.get(i-1);
+     skeletonModel.line(tempLoc[0], tempLoc[1], tempLoc[2], tempLoc_last[0], tempLoc_last[1], tempLoc_last[2]); 
+    }
+    
+
+  }
+
   if (dataArray!=null&&dataArray.size()!=0) {
     for (int i = 4; i < dataArray.size (); i+=4) {
       skeletonModel.stroke(255);
@@ -268,6 +295,20 @@ void rectGrid(int size, int tilesize, float y) {
       skeletonModel.rect(0, 0, tilesize, tilesize);
       skeletonModel.popMatrix();
     }
+  }
+}
+
+
+void keyPressed() {
+  if (key=='r') {
+    println("cam.getDistance = "+cam.getDistance());
+    println("globalPtich = "+globalPtich);
+    println("globalYaw = "+globalYaw);
+    float R = (float)cam.getDistance()/drawingScale;
+    float newZ = R*cos(globalYaw)*cos(globalPtich);
+    float newY = R*sin(globalPtich);
+    float newX = R*cos(globalPtich)*sin(globalYaw);
+    selectedPoints.add(new float[]{newX,newY,newZ});
   }
 }
 
