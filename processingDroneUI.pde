@@ -34,6 +34,8 @@ boolean  ifDrawHumanObj = true;
 boolean ifRosBridge = false;
 
 boolean isEditing = false;
+boolean isPreviewing = false;
+int previewObjectIndex = 0;
 
 //split screen
 PGraphics skeletonModel;
@@ -69,7 +71,7 @@ PImage mapImage;
 PImage videoFrame;
 ArrayList<Float> dataArray = new ArrayList<Float>();
 
-ArrayList<float[]> selectedPoints = new ArrayList<float[]>();
+ArrayList<CamPose> selectedPoints = new ArrayList<CamPose>();
 
 
 
@@ -225,7 +227,7 @@ void draw() {
 
   for (int i = 0; i<selectedPoints.size (); i++) {
     skeletonModel.pushMatrix();
-    float[] tempLoc = selectedPoints.get(i);
+    float[] tempLoc = selectedPoints.get(i).getCartesian();
     skeletonModel.translate(tempLoc[0], tempLoc[1], tempLoc[2]);
     skeletonModel.stroke(0);
 
@@ -243,7 +245,7 @@ void draw() {
 
     skeletonModel.stroke(255);
     if (i!=0) {
-      float[] tempLoc_last = selectedPoints.get(i-1);
+      float[] tempLoc_last = selectedPoints.get(i-1).getCartesian();
       skeletonModel.line(tempLoc[0], tempLoc[1], tempLoc[2], tempLoc_last[0], tempLoc_last[1], tempLoc_last[2]);
     }
   }
@@ -357,10 +359,7 @@ void keyPressed() {
       float newZ = R*cos(globalYaw)*cos(globalPitch);
       float newY = R*sin(globalPitch);
       float newX = R*cos(globalPitch)*sin(globalYaw);
-      selectedPoints.add(new float[] {
-        newX, newY, newZ
-      }
-      );
+      selectedPoints.add(new CamPose(R, globalPitch, globalYaw));
     }
   }
 
@@ -382,6 +381,11 @@ void keyPressed() {
   if (key == 'h') {
     ifDrawHumanObj = !ifDrawHumanObj;
     println("ifDrawHumanObj = "+ifDrawHumanObj);
+  }
+
+  if (key == 'h') {
+    isPreviewing = !isPreviewing;
+    println("isPreviewing = "+isPreviewing);
   }
 
 
