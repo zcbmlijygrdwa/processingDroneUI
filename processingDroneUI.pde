@@ -30,7 +30,7 @@ import de.fhpotsdam.unfolding.utils.*;
 import de.fhpotsdam.unfolding.providers.*;
 
 
-
+boolean  ifDrawHumanObj = true;
 boolean ifRosBridge = false;
 
 boolean isEditing = false;
@@ -46,6 +46,7 @@ int videoStream_h = 400;
 int map_w = 640;
 int map_h = 400;
 
+PShape human;
 
 PeasyCam cam;
 float globalPitch = 0;
@@ -84,8 +85,8 @@ void setup() {
 
   mapImage = loadImage("map.png");
 
-  cam = new PeasyCam(this, skeletonModel, 800);
-  cam.setMinimumDistance(360);
+  cam = new PeasyCam(this, skeletonModel, 400);
+  cam.setMinimumDistance(200);
   cam.setMaximumDistance(3000);
   cam.setLeftDragHandler(new PeasyDragHandler() {
     public void handleDrag(final double dx, final double dy) {
@@ -104,7 +105,7 @@ void setup() {
 
   int trajectoryPlanningSampleRate = 100; //Hz
 
-  
+  human = loadShape("Mii.obj");  
 
   Publisher p;
 
@@ -207,12 +208,19 @@ void draw() {
   skeletonModel.popMatrix();
 
 
-  skeletonModel.scale(drawingScale);
-  skeletonModel.stroke(0);
-  skeletonModel.strokeWeight(1/drawingScale);
-  skeletonModel.fill(255);
-  skeletonModel.box(1);
 
+
+  if (ifDrawHumanObj) {
+    skeletonModel.scale(drawingScale/200);
+    skeletonModel.shape(human);
+    skeletonModel.scale(200/drawingScale);
+  } else {
+    skeletonModel.stroke(0);
+    skeletonModel.fill(255);
+    skeletonModel.box(drawingScale);
+  }
+  skeletonModel.scale(drawingScale);
+  skeletonModel.strokeWeight(1/drawingScale);
   //println("selectedPoints.size () = "+selectedPoints.size());
 
   for (int i = 0; i<selectedPoints.size (); i++) {
@@ -220,13 +228,12 @@ void draw() {
     float[] tempLoc = selectedPoints.get(i);
     skeletonModel.translate(tempLoc[0], tempLoc[1], tempLoc[2]);
     skeletonModel.stroke(0);
-    
+
     double mouseObjectDistance = Math.sqrt(sq(mouseX-skeletonModel.screenX(0, 0, 0))+sq(mouseY-skeletonModel.screenY(0, 0, 0)));
-   
-    if(mouseObjectDistance<20){
-      skeletonModel.fill(255,0,0);
-    }
-    else{
+
+    if (mouseObjectDistance<20) {
+      skeletonModel.fill(255, 0, 0);
+    } else {
       skeletonModel.fill(255);
     }
 
@@ -372,7 +379,10 @@ void keyPressed() {
     println("droneMapPosition = "+droneMapPosition);
   }
 
-
+  if (key == 'h') {
+    ifDrawHumanObj = !ifDrawHumanObj;
+    println("ifDrawHumanObj = "+ifDrawHumanObj);
+  }
 
 
 
