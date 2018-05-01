@@ -38,11 +38,11 @@ Button functionB_button;
 Button functionC_button;
 Button functionD_button;
 
-boolean  ifDrawHumanObj = false;
+boolean  ifDrawHumanObj = true;
 boolean ifRosBridge = false;
 
-boolean isEditing = false;
-boolean isPreviewing = false;
+//boolean isEditing = false;
+//boolean isPreviewing = false;
 int previewObjectIndex = 0;
 
 //split screen
@@ -55,6 +55,12 @@ int videoStream_w = 640;
 int videoStream_h = 400;
 int map_w = 640;
 int map_h = 400;
+
+int state = 0;
+//  state map:
+//  state 0: main
+//  state 1: preview
+//  state 2: add pose
 
 PShape human;
 
@@ -89,29 +95,31 @@ void setup() {
 
   size(1280, 800, OPENGL);
 
+ ControlFont button_font = new ControlFont(createFont("Arial",15));
 
   cp5 = new ControlP5(this);
+  int button_width = skeletonModel_w/8;
   functionA_button = cp5.addButton("functionA_button")
     .setValue(0)
-      .setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9)
-        .setSize(skeletonModel_w/10, 20);
-        
-    functionB_button = cp5.addButton("functionB_button")
+      .setPosition(skeletonModel_w*0.2-button_width/2, skeletonModel_h*0.9)
+        .setSize(button_width, 30);
+
+  functionB_button = cp5.addButton("functionB_button")
     .setValue(0)
-      .setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*0.9)
-        .setSize(skeletonModel_w/10, 20);
-        
-    functionC_button = cp5.addButton("functionC_button")
+      .setPosition(skeletonModel_w*0.4-button_width/2, skeletonModel_h*0.9)
+        .setSize(button_width, 30);
+
+  functionC_button = cp5.addButton("functionC_button")
     .setValue(0)
-      .setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*0.9)
-        .setSize(skeletonModel_w/10, 20);
-        
-    functionD_button = cp5.addButton("functionD_button")
+      .setPosition(skeletonModel_w*0.6-button_width/2, skeletonModel_h*0.9)
+        .setSize(button_width, 30);
+
+  functionD_button = cp5.addButton("functionD_button")
     .setValue(0)
-      .setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9)
-        .setSize(skeletonModel_w/10, 20);
-        
-  
+      .setPosition(skeletonModel_w*0.8-button_width/2, skeletonModel_h*0.9)
+        .setSize(button_width, 30);
+
+
 
   cp5_mainLable = cp5.addTextlabel("cp5_mainLable")
     .setText("Main")
@@ -119,12 +127,13 @@ void setup() {
         .setColorValue(0xffffff00)
           .setFont(createFont("Georgia", 20))
             ;
-            
-      functionA_button.setLabel("Preview");
-      functionB_button.setLabel("Add");
-      functionC_button.setLabel("None");
-      functionD_button.setLabel("None");
-            
+
+functionA_button.getCaptionLabel().setFont(button_font);
+functionB_button.getCaptionLabel().setFont(button_font);
+functionC_button.getCaptionLabel().setFont(button_font);
+functionD_button.getCaptionLabel().setFont(button_font);
+
+  setState(0);
 
   skeletonModel = createGraphics(skeletonModel_w, skeletonModel_h, OPENGL);
   videoStream = createGraphics(videoStream_w, videoStream_h, P2D);
@@ -233,7 +242,7 @@ void draw() {
   //println(frameRate);
   //skeleton model
   skeletonModel.beginDraw();
-  if (isEditing) {
+  if (state==2) {
     skeletonModel.background(backGourd_edit);
   } else {
     skeletonModel.background(backGourd_review);
@@ -273,7 +282,7 @@ void draw() {
 
   for (int i = 0; i<selectedPoints.size (); i++) {
     float[] tempLoc = selectedPoints.get(i).getCartesian();
-    if (!isPreviewing||i!=previewObjectIndex) {
+    if (state==0||state==2||i!=previewObjectIndex) {
       skeletonModel.pushMatrix();
       skeletonModel.translate(tempLoc[0]*drawingScale, tempLoc[1]*drawingScale, tempLoc[2]*drawingScale);
       skeletonModel.stroke(0);
@@ -293,7 +302,9 @@ void draw() {
 
       skeletonModel.text(selectedPoints.get(i).getTitle(), 0, -1*drawingScale, 0);
       skeletonModel.popMatrix();
-      skeletonModel.box(drawingScale);
+//      skeletonModel.noStroke();
+//      skeletonModel.sphere(drawingScale/2);
+      skeletonModel.box(drawingScale/2);
       skeletonModel.popMatrix();
     }
 
@@ -378,7 +389,7 @@ void rectGrid(int size, int tilesize, float y) {
     for (float z = -size/2; z <= size/2; z++) {
       //run two for loops, cycling through 10 different positions of rectangles
       skeletonModel.pushMatrix();
-      if (isEditing) {
+      if (state==2) {
         skeletonModel.stroke(groundMesh_edit, map(dist(0, 0, x*tilesize, z*tilesize), 0, size/2*tilesize, 255, 0));//the rectangles close to you, are clear, while the ones farther from you, are much fainter
       } else {
         skeletonModel.stroke(groundMesh_review, map(dist(0, 0, x*tilesize, z*tilesize), 0, size/2*tilesize, 255, 0));//the rectangles close to you, are clear, while the ones farther from you, are much fainter
@@ -398,7 +409,7 @@ void rectGrid(int size, int tilesize, float y) {
 
 void keyPressed() {
   if (key=='r') {
-    if (isEditing) {
+    if (state==2) {
       //      println("cam.getDistance = "+cam.getDistance());
       //      println("globalPitch = "+globalPitch);
       //      println("globalYaw = "+globalYaw);
@@ -413,8 +424,12 @@ void keyPressed() {
 
   if (key == 'e') {
     //switch between reveiw and edit mode
-    isEditing = !isEditing;
-    println("isEditing = "+isEditing);
+    if (state!=2)
+      state = 2;
+    else
+      state = 0;
+    //    isEditing = !isEditing;
+    //    println("isEditing = "+isEditing);
   }
 
   if (key == 'l') {
@@ -431,10 +446,15 @@ void keyPressed() {
   //  }
 
   if (key == 'p') {
-    isPreviewing = !isPreviewing;
+    //isPreviewing = !isPreviewing;
+    if (state!=1)
+      setState(1);
+    else
+      setState(0);
 
-    if (isPreviewing) {
-      
+
+    if (state==1) {
+
 
       previewObjectIndex = 0;
       if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
@@ -444,25 +464,15 @@ void keyPressed() {
         cam.setDistance(tempPose.getSphericalR()*drawingScale);
         cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
       }
-      functionA_button.setLabel("None");
-      functionB_button.setLabel("Previous");
-      functionC_button.setLabel("Next");
-      functionD_button.setLabel("Exit");
       
-    } 
-    else {
+    } else {
       cp5_mainLable.setText("Main");
-      
-      functionA_button.setLabel("Preview");
-      functionB_button.setLabel("None");
-      functionC_button.setLabel("None");
-      functionD_button.setLabel("None");
     }
-    println("isPreviewing = "+isPreviewing);
+    println("state = "+state);
   }
 
   if (key == 'm') {
-    if (isPreviewing) {
+    if (state==1) {
       if (previewObjectIndex+1<selectedPoints.size()) {
         previewObjectIndex++;
       } else {
@@ -480,7 +490,7 @@ void keyPressed() {
   }
 
   if (key == 'n') {
-    if (isPreviewing) {
+    if (state==1) {
       if (previewObjectIndex-1>=0) {
         previewObjectIndex--;
       } else {
@@ -531,62 +541,96 @@ void keyPressed() {
 
 public void functionA_button(int theValue) {
   println("a button event from functionA_button");
-  
-    if (!isPreviewing) {
-    isPreviewing = true;
-      previewObjectIndex = 0;
-      if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
-        CamPose tempPose = selectedPoints.get(previewObjectIndex);
-        pid_globalPitch.setReference(tempPose.getSphericalPitch());
-        pid_globalYaw.setReference(tempPose.getSphericalYaw());
-        cam.setDistance(tempPose.getSphericalR()*drawingScale);
-        cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
-      }
-      functionA_button.setLabel("None");
-      functionB_button.setLabel("Previous");
-      functionC_button.setLabel("Next");
-      functionD_button.setLabel("Exit");
+
+  if (state==0) {
+    // go to preview mode
+
+    setState(1);
+    previewObjectIndex = 0;
+    if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
+      CamPose tempPose = selectedPoints.get(previewObjectIndex);
+      pid_globalPitch.setReference(tempPose.getSphericalPitch());
+      pid_globalYaw.setReference(tempPose.getSphericalYaw());
+      cam.setDistance(tempPose.getSphericalR()*drawingScale);
+      cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
+    }
+    
+  }
+
+  else if (state==1) {
+        //go to previous pose
+    if (previewObjectIndex-1>=0) {
+      previewObjectIndex--;
+    } else {
+      previewObjectIndex = selectedPoints.size()-1;
+    }
+    if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
+      CamPose tempPose = selectedPoints.get(previewObjectIndex);
+      pid_globalPitch.setReference(tempPose.getSphericalPitch());
+      pid_globalYaw.setReference(tempPose.getSphericalYaw());
+      cam.setDistance(tempPose.getSphericalR()*drawingScale);
+      cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
+    }
+    println("previewObjectIndex = "+previewObjectIndex);
+  }
+
+
+  else if (state==2) {
+    //add points
+    //      println("cam.getDistance = "+cam.getDistance());
+    //      println("globalPitch = "+globalPitch);
+    //      println("globalYaw = "+globalYaw);
+    float R = (float)cam.getDistance()/drawingScale;
+    float newZ = R*cos(globalYaw)*cos(globalPitch);
+    float newY = R*sin(globalPitch);
+    float newX = R*cos(globalPitch)*sin(globalYaw);
+    selectedPoints.add(new CamPose(R, globalPitch, globalYaw, ""+(char)('A'+selectedPoints.size())));
   }
 }
 
 
 public void functionB_button(int theValue) {
   println("a button event from functionB_button");
-  if(isPreviewing){
-        if (previewObjectIndex-1>=0) {
-        previewObjectIndex--;
-      } else {
-        previewObjectIndex = selectedPoints.size()-1;
-      }
-      if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
-        CamPose tempPose = selectedPoints.get(previewObjectIndex);
-        pid_globalPitch.setReference(tempPose.getSphericalPitch());
-        pid_globalYaw.setReference(tempPose.getSphericalYaw());
-        cam.setDistance(tempPose.getSphericalR()*drawingScale);
-        cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
-      }
-    println("previewObjectIndex = "+previewObjectIndex);   
+  if (state==0) {
+    // go to edit mode
+    setState(2);
   }
-  
+
+  else if (state==1) {
+    //go to next pose
+    if (previewObjectIndex+1<selectedPoints.size()) {
+      previewObjectIndex++;
+    } else {
+      previewObjectIndex = 0;
+    }
+    if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
+      CamPose tempPose = selectedPoints.get(previewObjectIndex);
+      pid_globalPitch.setReference(tempPose.getSphericalPitch());
+      pid_globalYaw.setReference(tempPose.getSphericalYaw());
+      cam.setDistance(tempPose.getSphericalR()*drawingScale);
+      cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
+    }
+    println("previewObjectIndex = "+previewObjectIndex);
+  }
+
+  else if (state==2) {
+    //to back to main
+    setState(0);
+  }
 }
 
 
 public void functionC_button(int theValue) {
   println("a button event from functionC_button");
-  if (isPreviewing) {
-          if (previewObjectIndex+1<selectedPoints.size()) {
-        previewObjectIndex++;
-      } else {
-        previewObjectIndex = 0;
-      }
-      if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
-        CamPose tempPose = selectedPoints.get(previewObjectIndex);
-        pid_globalPitch.setReference(tempPose.getSphericalPitch());
-        pid_globalYaw.setReference(tempPose.getSphericalYaw());
-        cam.setDistance(tempPose.getSphericalR()*drawingScale);
-        cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
-      }
-      println("previewObjectIndex = "+previewObjectIndex);
+
+  if (state==0) {
+  }
+
+  else if (state==1) {
+
+  }
+
+  else if (state==2) {
   }
 }
 
@@ -596,14 +640,74 @@ public void functionC_button(int theValue) {
 
 public void functionD_button(int theValue) {
   println("a button event from functionD_button");
-  if (isPreviewing) {
-    isPreviewing = false;
-      cp5_mainLable.setText("Main");
-      
-      functionA_button.setLabel("Preview");
-      functionB_button.setLabel("None");
-      functionC_button.setLabel("None");
-      functionD_button.setLabel("None");
+
+  if (state==0) {
+  }
+
+  else if (state==1) {
+
+
+//    //go back to main
+    setState(0);
+
+  }
+
+  else if (state==2) {
+    //    //go back to main
+    setState(0);
+  }
+}
+
+
+void setState(int s) {
+  println("State set to"+s);
+  state = s;
+  if (s==0) {
+    cp5_mainLable.setText("Main");
+    
+    functionA_button.setLabel("Preview");
+    functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9);
+    
+    functionB_button.setLabel("Add");
+    functionB_button.setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*0.9);
+    
+    functionC_button.setLabel("None");
+    functionC_button.setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*1.1);
+    
+    functionD_button.setLabel("None");
+    functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*1.1);
+  }
+
+  else if (s==1) {
+    cp5_mainLable.setText("Preview");
+    
+    functionA_button.setLabel("Previous");
+    functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9);
+    
+    functionB_button.setLabel("Next");
+    functionB_button.setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*0.9);
+    
+    functionC_button.setLabel("None");
+    functionC_button.setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*1.1);
+    
+    functionD_button.setLabel("Exit");
+    functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9);
+  }
+
+  else if (s==2) {
+    cp5_mainLable.setText("Edit");
+    
+    functionA_button.setLabel("Add");
+    functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9);
+    
+    functionB_button.setLabel("None");
+    functionB_button.setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*1.1);
+    
+    functionC_button.setLabel("None");
+    functionC_button.setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*1.1);
+    
+    functionD_button.setLabel("Exit");
+    functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9);
   }
 }
 
