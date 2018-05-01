@@ -1,3 +1,5 @@
+import controlP5.*;
+
 import peasy.*;
 import peasy.org.apache.commons.math.*;
 import peasy.org.apache.commons.math.geometry.*;
@@ -29,6 +31,12 @@ import de.fhpotsdam.unfolding.geo.*;
 import de.fhpotsdam.unfolding.utils.*;
 import de.fhpotsdam.unfolding.providers.*;
 
+ControlP5 cp5;
+Textlabel cp5_mainLable;
+Button functionA_button;
+Button functionB_button;
+Button functionC_button;
+Button functionD_button;
 
 boolean  ifDrawHumanObj = false;
 boolean ifRosBridge = false;
@@ -82,6 +90,42 @@ void setup() {
   size(1280, 800, OPENGL);
 
 
+  cp5 = new ControlP5(this);
+  functionA_button = cp5.addButton("functionA_button")
+    .setValue(0)
+      .setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9)
+        .setSize(skeletonModel_w/10, 20);
+        
+    functionB_button = cp5.addButton("functionB_button")
+    .setValue(0)
+      .setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*0.9)
+        .setSize(skeletonModel_w/10, 20);
+        
+    functionC_button = cp5.addButton("functionC_button")
+    .setValue(0)
+      .setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*0.9)
+        .setSize(skeletonModel_w/10, 20);
+        
+    functionD_button = cp5.addButton("functionD_button")
+    .setValue(0)
+      .setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9)
+        .setSize(skeletonModel_w/10, 20);
+        
+  
+
+  cp5_mainLable = cp5.addTextlabel("cp5_mainLable")
+    .setText("Main")
+      .setPosition(200, 50)
+        .setColorValue(0xffffff00)
+          .setFont(createFont("Georgia", 20))
+            ;
+            
+      functionA_button.setLabel("Preview");
+      functionB_button.setLabel("Add");
+      functionC_button.setLabel("None");
+      functionD_button.setLabel("None");
+            
+
   skeletonModel = createGraphics(skeletonModel_w, skeletonModel_h, OPENGL);
   videoStream = createGraphics(videoStream_w, videoStream_h, P2D);
 
@@ -106,8 +150,8 @@ void setup() {
 
   int trajectoryPlanningSampleRate = 100; //Hz
 
-if(ifDrawHumanObj)
-  human = loadShape("Mii.obj");  
+  if (ifDrawHumanObj)
+    human = loadShape("Mii.obj");  
 
   Publisher p;
 
@@ -229,28 +273,28 @@ void draw() {
 
   for (int i = 0; i<selectedPoints.size (); i++) {
     float[] tempLoc = selectedPoints.get(i).getCartesian();
-    if (!isPreviewing||i!=previewObjectIndex){
-    skeletonModel.pushMatrix();
-    skeletonModel.translate(tempLoc[0]*drawingScale, tempLoc[1]*drawingScale, tempLoc[2]*drawingScale);
-    skeletonModel.stroke(0);
+    if (!isPreviewing||i!=previewObjectIndex) {
+      skeletonModel.pushMatrix();
+      skeletonModel.translate(tempLoc[0]*drawingScale, tempLoc[1]*drawingScale, tempLoc[2]*drawingScale);
+      skeletonModel.stroke(0);
 
-    double mouseObjectDistance = Math.sqrt(sq(mouseX-skeletonModel.screenX(0, 0, 0))+sq(mouseY-skeletonModel.screenY(0, 0, 0)));
+      double mouseObjectDistance = Math.sqrt(sq(mouseX-skeletonModel.screenX(0, 0, 0))+sq(mouseY-skeletonModel.screenY(0, 0, 0)));
 
-    if (mouseObjectDistance<20) {
-      skeletonModel.fill(255, 0, 0);
-    } else {
-      skeletonModel.fill(255);
-    }
+      if (mouseObjectDistance<20) {
+        skeletonModel.fill(255, 0, 0);
+      } else {
+        skeletonModel.fill(255);
+      }
 
-    // skeletonModel.textSize(1/drawingScale);
-    skeletonModel.pushMatrix();
-    skeletonModel.rotateY(-PI+globalYaw);
-    skeletonModel.rotateX(-PI+globalPitch);
-    
-    skeletonModel.text(selectedPoints.get(i).getTitle(), 0, -1*drawingScale, 0);
-    skeletonModel.popMatrix();
-    skeletonModel.box(drawingScale);
-    skeletonModel.popMatrix();
+      // skeletonModel.textSize(1/drawingScale);
+      skeletonModel.pushMatrix();
+      skeletonModel.rotateY(-PI+globalYaw);
+      skeletonModel.rotateX(-PI+globalPitch);
+
+      skeletonModel.text(selectedPoints.get(i).getTitle(), 0, -1*drawingScale, 0);
+      skeletonModel.popMatrix();
+      skeletonModel.box(drawingScale);
+      skeletonModel.popMatrix();
     }
 
     skeletonModel.stroke(255);
@@ -323,13 +367,6 @@ void draw() {
     popMatrix();
   }
 
-
-
-
-
-
-
-
   image(skeletonModel, 0, 0);
   image(videoStream, skeletonModel_w, 0);
   //image(map, skeletonModel_w, videoStream_h,map_w,map_h);
@@ -362,14 +399,14 @@ void rectGrid(int size, int tilesize, float y) {
 void keyPressed() {
   if (key=='r') {
     if (isEditing) {
-//      println("cam.getDistance = "+cam.getDistance());
-//      println("globalPitch = "+globalPitch);
-//      println("globalYaw = "+globalYaw);
+      //      println("cam.getDistance = "+cam.getDistance());
+      //      println("globalPitch = "+globalPitch);
+      //      println("globalYaw = "+globalYaw);
       float R = (float)cam.getDistance()/drawingScale;
       float newZ = R*cos(globalYaw)*cos(globalPitch);
       float newY = R*sin(globalPitch);
       float newX = R*cos(globalPitch)*sin(globalYaw);
-      selectedPoints.add(new CamPose(R, globalPitch, globalYaw,""+(char)('A'+selectedPoints.size())));
+      selectedPoints.add(new CamPose(R, globalPitch, globalYaw, ""+(char)('A'+selectedPoints.size())));
     }
   }
 
@@ -388,22 +425,38 @@ void keyPressed() {
     println("droneMapPosition = "+droneMapPosition);
   }
 
-  if (key == 'h') {
-    ifDrawHumanObj = !ifDrawHumanObj;
-    println("ifDrawHumanObj = "+ifDrawHumanObj);
-  }
+  //  if (key == 'h') {
+  //    ifDrawHumanObj = !ifDrawHumanObj;
+  //    println("ifDrawHumanObj = "+ifDrawHumanObj);
+  //  }
 
   if (key == 'p') {
     isPreviewing = !isPreviewing;
 
     if (isPreviewing) {
+      
+
       previewObjectIndex = 0;
       if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
         CamPose tempPose = selectedPoints.get(previewObjectIndex);
         pid_globalPitch.setReference(tempPose.getSphericalPitch());
         pid_globalYaw.setReference(tempPose.getSphericalYaw());
         cam.setDistance(tempPose.getSphericalR()*drawingScale);
+        cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
       }
+      functionA_button.setLabel("None");
+      functionB_button.setLabel("Previous");
+      functionC_button.setLabel("Next");
+      functionD_button.setLabel("Exit");
+      
+    } 
+    else {
+      cp5_mainLable.setText("Main");
+      
+      functionA_button.setLabel("Preview");
+      functionB_button.setLabel("None");
+      functionC_button.setLabel("None");
+      functionD_button.setLabel("None");
     }
     println("isPreviewing = "+isPreviewing);
   }
@@ -420,6 +473,7 @@ void keyPressed() {
         pid_globalPitch.setReference(tempPose.getSphericalPitch());
         pid_globalYaw.setReference(tempPose.getSphericalYaw());
         cam.setDistance(tempPose.getSphericalR()*drawingScale);
+        cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
       }
     }
     println("previewObjectIndex = "+previewObjectIndex);
@@ -437,6 +491,7 @@ void keyPressed() {
         pid_globalPitch.setReference(tempPose.getSphericalPitch());
         pid_globalYaw.setReference(tempPose.getSphericalYaw());
         cam.setDistance(tempPose.getSphericalR()*drawingScale);
+        cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
       }
     }
     println("previewObjectIndex = "+previewObjectIndex);
@@ -470,6 +525,85 @@ void keyPressed() {
     //    globalYaw = 0;
     pid_globalPitch.setReference(PI/2.0f);
     pid_globalYaw.setReference(0);
+  }
+}
+
+
+public void functionA_button(int theValue) {
+  println("a button event from functionA_button");
+  
+    if (!isPreviewing) {
+    isPreviewing = true;
+      previewObjectIndex = 0;
+      if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
+        CamPose tempPose = selectedPoints.get(previewObjectIndex);
+        pid_globalPitch.setReference(tempPose.getSphericalPitch());
+        pid_globalYaw.setReference(tempPose.getSphericalYaw());
+        cam.setDistance(tempPose.getSphericalR()*drawingScale);
+        cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
+      }
+      functionA_button.setLabel("None");
+      functionB_button.setLabel("Previous");
+      functionC_button.setLabel("Next");
+      functionD_button.setLabel("Exit");
+  }
+}
+
+
+public void functionB_button(int theValue) {
+  println("a button event from functionB_button");
+  if(isPreviewing){
+        if (previewObjectIndex-1>=0) {
+        previewObjectIndex--;
+      } else {
+        previewObjectIndex = selectedPoints.size()-1;
+      }
+      if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
+        CamPose tempPose = selectedPoints.get(previewObjectIndex);
+        pid_globalPitch.setReference(tempPose.getSphericalPitch());
+        pid_globalYaw.setReference(tempPose.getSphericalYaw());
+        cam.setDistance(tempPose.getSphericalR()*drawingScale);
+        cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
+      }
+    println("previewObjectIndex = "+previewObjectIndex);   
+  }
+  
+}
+
+
+public void functionC_button(int theValue) {
+  println("a button event from functionC_button");
+  if (isPreviewing) {
+          if (previewObjectIndex+1<selectedPoints.size()) {
+        previewObjectIndex++;
+      } else {
+        previewObjectIndex = 0;
+      }
+      if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
+        CamPose tempPose = selectedPoints.get(previewObjectIndex);
+        pid_globalPitch.setReference(tempPose.getSphericalPitch());
+        pid_globalYaw.setReference(tempPose.getSphericalYaw());
+        cam.setDistance(tempPose.getSphericalR()*drawingScale);
+        cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
+      }
+      println("previewObjectIndex = "+previewObjectIndex);
+  }
+}
+
+
+
+
+
+public void functionD_button(int theValue) {
+  println("a button event from functionD_button");
+  if (isPreviewing) {
+    isPreviewing = false;
+      cp5_mainLable.setText("Main");
+      
+      functionA_button.setLabel("Preview");
+      functionB_button.setLabel("None");
+      functionC_button.setLabel("None");
+      functionD_button.setLabel("None");
   }
 }
 
