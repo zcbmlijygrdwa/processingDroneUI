@@ -40,6 +40,7 @@ Button functionD_button;
 
 boolean  ifDrawHumanObj = true;
 boolean ifRosBridge = false;
+boolean ifLiveMap = false;
 
 //boolean isEditing = false;
 //boolean isPreviewing = false;
@@ -86,7 +87,7 @@ PImage videoFrame;
 ArrayList<Float> dataArray = new ArrayList<Float>();
 
 ArrayList<CamPose> selectedPoints = new ArrayList<CamPose>();
-
+ArrayList<int[]> selectedGPSs = new ArrayList<int[]>();
 
 
 void setup() {
@@ -225,11 +226,12 @@ functionD_button.getCaptionLabel().setFont(button_font);
   }
 
 
+  if(ifLiveMap){
 
   unfoldingMap = new UnfoldingMap(this, skeletonModel_w, videoStream_h, map_w, map_h, new OpenStreetMap.OpenStreetMapProvider());
   unfoldingMap.zoomAndPanTo(new Location(52.5f, 13.4f), 10);
   MapUtils.createDefaultEventDispatcher(this, unfoldingMap);
-
+  }
   plane = loadImage("plane4.png");
 }
 
@@ -360,6 +362,7 @@ void draw() {
 
   //map
   //map.background(100);
+  if(ifLiveMap){
   unfoldingMap.draw();
 
 
@@ -376,6 +379,28 @@ void draw() {
     image(plane, 0, 0);
     imageMode (CORNER); 
     popMatrix();
+  }
+  }
+  else{
+    image(mapImage, skeletonModel_w, videoStream_h,map_w,map_h);
+    pushMatrix();
+    translate(skeletonModel_w+350, skeletonModel_w+50);
+    rotate(-PI/2);
+    image(plane, 0,0);
+    popMatrix();
+  }
+  
+  for(int i = 0 ; i<selectedGPSs.size();i++){
+   int[] tempPos = selectedGPSs.get(i);
+   int markerSize = 20;
+   fill(0);
+   text(""+(char)('A'+i),tempPos[0],tempPos[1]-markerSize/2);
+   fill(255);
+    ellipse(tempPos[0],tempPos[1],markerSize,markerSize);
+    if(i>0){
+      int[] tempPosPrev = selectedGPSs.get(i-1);
+     line(tempPosPrev[0],tempPosPrev[1],tempPos[0],tempPos[1]);
+    }
   }
 
   image(skeletonModel, 0, 0);
@@ -709,5 +734,10 @@ void setState(int s) {
     functionD_button.setLabel("Exit");
     functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9);
   }
+}
+
+void mouseClicked() {
+  println(mouseX+","+mouseY);
+  selectedGPSs.add(new int[]{mouseX,mouseY});
 }
 
