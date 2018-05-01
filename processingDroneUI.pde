@@ -38,7 +38,7 @@ Button functionB_button;
 Button functionC_button;
 Button functionD_button;
 
-boolean  ifDrawHumanObj = true;
+boolean  ifDrawHumanObj = false;
 boolean ifRosBridge = false;
 boolean ifLiveMap = false;
 
@@ -97,7 +97,7 @@ void setup() {
 
   size(1280, 800, OPENGL);
 
- ControlFont button_font = new ControlFont(createFont("Arial",15));
+  ControlFont button_font = new ControlFont(createFont("Arial", 15));
 
   cp5 = new ControlP5(this);
   int button_width = skeletonModel_w/8;
@@ -130,17 +130,17 @@ void setup() {
           .setFont(createFont("Georgia", 20))
             ;
 
-functionA_button.getCaptionLabel().setFont(button_font);
-functionB_button.getCaptionLabel().setFont(button_font);
-functionC_button.getCaptionLabel().setFont(button_font);
-functionD_button.getCaptionLabel().setFont(button_font);
+  functionA_button.getCaptionLabel().setFont(button_font);
+  functionB_button.getCaptionLabel().setFont(button_font);
+  functionC_button.getCaptionLabel().setFont(button_font);
+  functionD_button.getCaptionLabel().setFont(button_font);
 
   setState(0);
 
   skeletonModel = createGraphics(skeletonModel_w, skeletonModel_h, OPENGL);
   videoStream = createGraphics(videoStream_w, videoStream_h, P2D);
 
-  mapImage = loadImage("map.png");
+  mapImage = loadImage("map2.png");
 
   cam = new PeasyCam(this, skeletonModel, 400);
   cam.setMinimumDistance(200);
@@ -227,11 +227,11 @@ functionD_button.getCaptionLabel().setFont(button_font);
   }
 
 
-  if(ifLiveMap){
+  if (ifLiveMap) {
 
-  unfoldingMap = new UnfoldingMap(this, skeletonModel_w, videoStream_h, map_w, map_h, new OpenStreetMap.OpenStreetMapProvider());
-  unfoldingMap.zoomAndPanTo(new Location(52.5f, 13.4f), 10);
-  MapUtils.createDefaultEventDispatcher(this, unfoldingMap);
+    unfoldingMap = new UnfoldingMap(this, skeletonModel_w, videoStream_h, map_w, map_h, new OpenStreetMap.OpenStreetMapProvider());
+    unfoldingMap.zoomAndPanTo(new Location(52.5f, 13.4f), 10);
+    MapUtils.createDefaultEventDispatcher(this, unfoldingMap);
   }
   plane = loadImage("plane4.png");
 }
@@ -305,8 +305,8 @@ void draw() {
 
       skeletonModel.text(selectedPoints.get(i).getTitle(), 0, -1*drawingScale, 0);
       skeletonModel.popMatrix();
-//      skeletonModel.noStroke();
-//      skeletonModel.sphere(drawingScale/2);
+      //      skeletonModel.noStroke();
+      //      skeletonModel.sphere(drawingScale/2);
       skeletonModel.box(drawingScale/2);
       skeletonModel.popMatrix();
     }
@@ -353,8 +353,13 @@ void draw() {
 
   //video stream
   videoStream.beginDraw();
-  if (videoFrame!=null)
+  if (videoFrame!=null) {
     videoStream.image(videoFrame, 0, 0, videoStream_w, videoStream_h);
+  } else {
+    videoStream.textSize(20);
+    videoStream.fill(0);
+    videoStream.text("No Camera Connection", videoStream_w/3, videoStream_h/2, 300, 30);
+  }
   videoStream.endDraw();
 
 
@@ -363,50 +368,53 @@ void draw() {
 
   //map
   //map.background(100);
-  if(ifLiveMap){
-  unfoldingMap.draw();
+  if (ifLiveMap) {
+    unfoldingMap.draw();
 
 
 
-  stroke(20, 20, 20, 100);
-  fill(20, 20, 20, 100);
-  if (droneLocation!=null) {
-    droneMapPosition = unfoldingMap.getScreenPosition(droneLocation);
-    //println(droneMapPosition);
+    stroke(20, 20, 20, 100);
+    fill(20, 20, 20, 100);
+    if (droneLocation!=null) {
+      droneMapPosition = unfoldingMap.getScreenPosition(droneLocation);
+      //println(droneMapPosition);
+      pushMatrix();
+      translate(droneMapPosition.x, droneMapPosition.y);
+      rotate(DroneFlightEmulator.getInstance().nextRotation(0));
+      imageMode (CENTER); 
+      image(plane, 0, 0);
+      imageMode (CORNER); 
+      popMatrix();
+    }
+  } else {
+    image(mapImage, skeletonModel_w, videoStream_h, map_w, map_h);
     pushMatrix();
-    translate(droneMapPosition.x, droneMapPosition.y);
-    rotate(PlanePoseEmulator.getInstance().nextRotation());
+    translate(skeletonModel_w+350, skeletonModel_w+50);
+    float[] trans = DroneFlightEmulator.getInstance().nextTranslation(0,0);
+    translate(trans[0],trans[1]);
+    rotate(-PI/2);
+    rotate(      (DroneFlightEmulator.getInstance().nextRotation(0)));
     imageMode (CENTER); 
     image(plane, 0, 0);
     imageMode (CORNER); 
     popMatrix();
   }
-  }
-  else{
-    image(mapImage, skeletonModel_w, videoStream_h,map_w,map_h);
-    pushMatrix();
-    translate(skeletonModel_w+350, skeletonModel_w+50);
-    rotate(-PI/2);
-    image(plane, 0,0);
-    popMatrix();
-  }
-  
-  for(int i = 0 ; i<selectedGPSs.size();i++){
-   int[] tempPos = selectedGPSs.get(i);
-   int markerSize = 20;
-   fill(0);
-   text(""+(char)('A'+i),tempPos[0],tempPos[1]-markerSize/2);
-   if(state==1&&i==previewObjectIndex){
-     fill(selected_gps);
-   }
-   else{
-     fill(normal_gps);
-   }
-   
-    ellipse(tempPos[0],tempPos[1],markerSize,markerSize);
-    if(i>0){
+
+  for (int i = 0; i<selectedGPSs.size (); i++) {
+    int[] tempPos = selectedGPSs.get(i);
+    int markerSize = 20;
+    fill(0);
+    text(""+(char)('A'+i), tempPos[0], tempPos[1]-markerSize/2);
+    if (state==1&&i==previewObjectIndex) {
+      fill(selected_gps);
+    } else {
+      fill(normal_gps);
+    }
+
+    ellipse(tempPos[0], tempPos[1], markerSize, markerSize);
+    if (i>0) {
       int[] tempPosPrev = selectedGPSs.get(i-1);
-     line(tempPosPrev[0],tempPosPrev[1],tempPos[0],tempPos[1]);
+      line(tempPosPrev[0], tempPosPrev[1], tempPos[0], tempPos[1]);
     }
   }
 
@@ -496,7 +504,6 @@ void keyPressed() {
         cam.setDistance(tempPose.getSphericalR()*drawingScale);
         cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
       }
-      
     } else {
       cp5_mainLable.setText("Main");
     }
@@ -586,11 +593,8 @@ public void functionA_button(int theValue) {
       cam.setDistance(tempPose.getSphericalR()*drawingScale);
       cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
     }
-    
-  }
-
-  else if (state==1) {
-        //go to previous pose
+  } else if (state==1) {
+    //go to previous pose
     if (previewObjectIndex-1>=0) {
       previewObjectIndex--;
     } else {
@@ -604,14 +608,8 @@ public void functionA_button(int theValue) {
       cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
     }
     println("previewObjectIndex = "+previewObjectIndex);
-  }
-
-
-  else if (state==2) {
-    
-  }
-  
-  else if (state==3) {
+  } else if (state==2) {
+  } else if (state==3) {
     //add points
     //      println("cam.getDistance = "+cam.getDistance());
     //      println("globalPitch = "+globalPitch);
@@ -631,9 +629,7 @@ public void functionB_button(int theValue) {
   if (state==0) {
     // go to edit GPS mode
     setState(2);
-  }
-
-  else if (state==1) {
+  } else if (state==1) {
     //go to next pose
     if (previewObjectIndex+1<selectedPoints.size()) {
       previewObjectIndex++;
@@ -648,15 +644,12 @@ public void functionB_button(int theValue) {
       cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
     }
     println("previewObjectIndex = "+previewObjectIndex);
-  }
-
-  else if (state==2) {
-//    //to back to main
-//    setState(0);
-  }
-    else if (state==3) {
-//        //to back to main
-//    setState(0);
+  } else if (state==2) {
+    //    //to back to main
+    //    setState(0);
+  } else if (state==3) {
+    //        //to back to main
+    //    setState(0);
   }
 }
 
@@ -665,17 +658,9 @@ public void functionC_button(int theValue) {
   println("a button event from functionC_button");
 
   if (state==0) {
-  }
-
-  else if (state==1) {
-
-  }
-
-  else if (state==2) {
-  }
-  
-  else if (state==3) {
-
+  } else if (state==1) {
+  } else if (state==2) {
+  } else if (state==3) {
   }
 }
 
@@ -687,22 +672,15 @@ public void functionD_button(int theValue) {
   println("a button event from functionD_button");
 
   if (state==0) {
-  }
-
-  else if (state==1) {
+  } else if (state==1) {
 
 
-//    //go back to main
-    setState(0);
-
-  }
-
-  else if (state==2) {
     //    //go back to main
     setState(0);
-  }
-  
-  else if (state==3) {
+  } else if (state==2) {
+    //    //go back to main
+    setState(0);
+  } else if (state==3) {
     //    //go back to main
     setState(0);
     println("selectedGPSs.size() = "+selectedGPSs.size());
@@ -716,77 +694,72 @@ void setState(int s) {
   state = s;
   if (s==0) {
     cp5_mainLable.setText("Main");
-    
+
     functionA_button.setLabel("Preview");
     functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9);
-    
+
     functionB_button.setLabel("Add");
     functionB_button.setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*0.9);
-    
+
     functionC_button.setLabel("None");
     functionC_button.setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*1.1);
-    
+
     functionD_button.setLabel("None");
     functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*1.1);
-  }
-
-  else if (s==1) {
+  } else if (s==1) {
     cp5_mainLable.setText("Preview");
-    
+
     functionA_button.setLabel("Previous");
     functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9);
-    
+
     functionB_button.setLabel("Next");
     functionB_button.setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*0.9);
-    
+
     functionC_button.setLabel("None");
     functionC_button.setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*1.1);
-    
+
     functionD_button.setLabel("Exit");
     functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9);
-  }
-
-  else if (s==2) {
+  } else if (s==2) {
     cp5_mainLable.setText("Edit: Please add a GPS");
-    
+
     functionA_button.setLabel("None");
     functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*1.1);
-    
+
     functionB_button.setLabel("None");
     functionB_button.setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*1.1);
-    
+
     functionC_button.setLabel("None");
     functionC_button.setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*1.1);
-    
+
     functionD_button.setLabel("Exit");
     functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9);
-  }
-
-  else if (s==3) {
+  } else if (s==3) {
     cp5_mainLable.setText("Edit: Please add a camera pose");
-    
+
     functionA_button.setLabel("Add");
     functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9);
-    
+
     functionB_button.setLabel("None");
     functionB_button.setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*1.1);
-    
+
     functionC_button.setLabel("None");
     functionC_button.setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*1.1);
-    
+
     functionD_button.setLabel("Exit");
     functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9);
   }
-  
-
 }
 
 void mouseClicked() {
-  if(state==2){
-    if(skeletonModel_w<=mouseX&&mouseX<=width&&videoStream_h<=mouseY&&mouseY<=height){
-  println(mouseX+","+mouseY);
-  selectedGPSs.add(new int[]{mouseX,mouseY});
-  setState(3);
+  if (state==2) {
+    if (skeletonModel_w<=mouseX&&mouseX<=width&&videoStream_h<=mouseY&&mouseY<=height) {
+      println(mouseX+","+mouseY);
+      selectedGPSs.add(new int[] {
+        mouseX, mouseY
+      }
+      );
+      setState(3);
     }
   }
 }

@@ -9,13 +9,14 @@ class PIDController{
  float i;
  float d;
  
- boolean isOperational = false;
+ boolean isOperational;
  
  public PIDController(float p, float i, float d){
    this.p = p;
    this.i = i;
    this.d = d;
    error_p_prev = 0;
+   isOperational = false;
  }
  
  public void setReference(float reference){
@@ -26,7 +27,7 @@ class PIDController{
  public float process(float dataIn){
    error_p = reference - dataIn;
    
-   if(abs(error_p)<0.0001){
+   if(Math.abs(error_p)<0.0001){
      isOperational = false;
    }
    
