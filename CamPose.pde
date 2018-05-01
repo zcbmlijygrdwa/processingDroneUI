@@ -77,5 +77,9 @@ class CamPose {
     return  cartesianCoord;
   }
   
+  public String getTitle(){
+   return title; 
+  }
+  
 }
 

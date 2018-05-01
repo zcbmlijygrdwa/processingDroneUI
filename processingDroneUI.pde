@@ -30,7 +30,7 @@ import de.fhpotsdam.unfolding.utils.*;
 import de.fhpotsdam.unfolding.providers.*;
 
 
-boolean  ifDrawHumanObj = true;
+boolean  ifDrawHumanObj = false;
 boolean ifRosBridge = false;
 
 boolean isEditing = false;
@@ -106,6 +106,7 @@ void setup() {
 
   int trajectoryPlanningSampleRate = 100; //Hz
 
+if(ifDrawHumanObj)
   human = loadShape("Mii.obj");  
 
   Publisher p;
@@ -183,7 +184,7 @@ void setup() {
 void draw() {
 
 
-  
+
 
   //println(frameRate);
   //skeleton model
@@ -194,7 +195,6 @@ void draw() {
     skeletonModel.background(backGourd_review);
   }
 
-
   //controllers update
   if (pid_globalPitch.isOn()) {
     globalPitch = pid_globalPitch.process(globalPitch);
@@ -203,10 +203,9 @@ void draw() {
   if (pid_globalYaw.isOn()) {
     globalYaw = pid_globalYaw.process(globalYaw);
   }
-  
+
   skeletonModel.rotateX(PI-globalPitch);
   skeletonModel.rotateY(PI-globalYaw);
-
   skeletonModel.strokeWeight(1);
   skeletonModel.pushMatrix();
   rectGrid(25, (int)(1*drawingScale), 0);//a rectangle grid can be a lot bigger than a boxgrid, without caursing lag
@@ -224,15 +223,15 @@ void draw() {
     skeletonModel.fill(255);
     skeletonModel.box(drawingScale);
   }
-  skeletonModel.scale(drawingScale);
-  skeletonModel.strokeWeight(1/drawingScale);
+  //skeletonModel.scale(drawingScale);
+  // skeletonModel.strokeWeight(1/drawingScale);
   //println("selectedPoints.size () = "+selectedPoints.size());
 
   for (int i = 0; i<selectedPoints.size (); i++) {
-    if(isPreviewing&&i==previewObjectIndex) continue;
-    skeletonModel.pushMatrix();
     float[] tempLoc = selectedPoints.get(i).getCartesian();
-    skeletonModel.translate(tempLoc[0], tempLoc[1], tempLoc[2]);
+    if (!isPreviewing||i!=previewObjectIndex){
+    skeletonModel.pushMatrix();
+    skeletonModel.translate(tempLoc[0]*drawingScale, tempLoc[1]*drawingScale, tempLoc[2]*drawingScale);
     skeletonModel.stroke(0);
 
     double mouseObjectDistance = Math.sqrt(sq(mouseX-skeletonModel.screenX(0, 0, 0))+sq(mouseY-skeletonModel.screenY(0, 0, 0)));
@@ -243,14 +242,21 @@ void draw() {
       skeletonModel.fill(255);
     }
 
-    skeletonModel.box(2);
+    // skeletonModel.textSize(1/drawingScale);
+    skeletonModel.pushMatrix();
+    skeletonModel.rotateY(-PI+globalYaw);
+    skeletonModel.rotateX(-PI+globalPitch);
+    
+    skeletonModel.text(selectedPoints.get(i).getTitle(), 0, -1*drawingScale, 0);
     skeletonModel.popMatrix();
-
+    skeletonModel.box(drawingScale);
+    skeletonModel.popMatrix();
+    }
 
     skeletonModel.stroke(255);
     if (i!=0) {
       float[] tempLoc_last = selectedPoints.get(i-1).getCartesian();
-      skeletonModel.line(tempLoc[0], tempLoc[1], tempLoc[2], tempLoc_last[0], tempLoc_last[1], tempLoc_last[2]);
+      skeletonModel.line(tempLoc[0]*drawingScale, tempLoc[1]*drawingScale, tempLoc[2]*drawingScale, tempLoc_last[0]*drawingScale, tempLoc_last[1]*drawingScale, tempLoc_last[2]*drawingScale);
     }
   }
 
@@ -261,7 +267,7 @@ void draw() {
     for (int i = 4; i < dataArray.size (); i+=4) {
       skeletonModel.stroke(255);
 
-      skeletonModel.line(dataArray.get(i-4), dataArray.get(i+2-4), dataArray.get(i+1-4), dataArray.get(i), dataArray.get(i+2), dataArray.get(i+1));
+      skeletonModel.line(dataArray.get(i-4)*drawingScale, dataArray.get(i+2-4)*drawingScale, dataArray.get(i+1-4)*drawingScale, dataArray.get(i)*drawingScale, dataArray.get(i+2)*drawingScale, dataArray.get(i+1)*drawingScale);
     }
 
     skeletonModel.noStroke();
@@ -272,7 +278,7 @@ void draw() {
       //println("index = "+index);
       //System.out.println(dataArray.get(index*4)+","+ dataArray.get(index*4+1)+","+ dataArray.get(index*4+2));
 
-      skeletonModel.translate(dataArray.get(index*4), dataArray.get(index*4+2), dataArray.get(index*4+1));
+      skeletonModel.translate(dataArray.get(index*4)*drawingScale, dataArray.get(index*4+2)*drawingScale, dataArray.get(index*4+1)*drawingScale);
       float yaw = dataArray.get(index+3);
       skeletonModel.rotateY(yaw);
       skeletonModel.fill(map(index*4, 0, dataArray.size(), 255, 50), 255, map(index*4, 0, dataArray.size(), 50, 255));
@@ -356,14 +362,14 @@ void rectGrid(int size, int tilesize, float y) {
 void keyPressed() {
   if (key=='r') {
     if (isEditing) {
-      println("cam.getDistance = "+cam.getDistance());
-      println("globalPitch = "+globalPitch);
-      println("globalYaw = "+globalYaw);
+//      println("cam.getDistance = "+cam.getDistance());
+//      println("globalPitch = "+globalPitch);
+//      println("globalYaw = "+globalYaw);
       float R = (float)cam.getDistance()/drawingScale;
       float newZ = R*cos(globalYaw)*cos(globalPitch);
       float newY = R*sin(globalPitch);
       float newX = R*cos(globalPitch)*sin(globalYaw);
-      selectedPoints.add(new CamPose(R, globalPitch, globalYaw));
+      selectedPoints.add(new CamPose(R, globalPitch, globalYaw,""+(char)('A'+selectedPoints.size())));
     }
   }
 
@@ -389,52 +395,50 @@ void keyPressed() {
 
   if (key == 'p') {
     isPreviewing = !isPreviewing;
-    
-    if(isPreviewing){
+
+    if (isPreviewing) {
       previewObjectIndex = 0;
-      if(previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()){
+      if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
         CamPose tempPose = selectedPoints.get(previewObjectIndex);
         pid_globalPitch.setReference(tempPose.getSphericalPitch());
         pid_globalYaw.setReference(tempPose.getSphericalYaw());
         cam.setDistance(tempPose.getSphericalR()*drawingScale);
-        }
+      }
     }
     println("isPreviewing = "+isPreviewing);
   }
-  
-    if (key == 'm') {
-      if(isPreviewing){
-        if(previewObjectIndex+1<selectedPoints.size()){
-          previewObjectIndex++;
-        }
-        else{
-         previewObjectIndex = 0; 
-        }
-        if(previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()){
+
+  if (key == 'm') {
+    if (isPreviewing) {
+      if (previewObjectIndex+1<selectedPoints.size()) {
+        previewObjectIndex++;
+      } else {
+        previewObjectIndex = 0;
+      }
+      if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
         CamPose tempPose = selectedPoints.get(previewObjectIndex);
         pid_globalPitch.setReference(tempPose.getSphericalPitch());
         pid_globalYaw.setReference(tempPose.getSphericalYaw());
         cam.setDistance(tempPose.getSphericalR()*drawingScale);
-        }
       }
+    }
     println("previewObjectIndex = "+previewObjectIndex);
   }
-  
-    if (key == 'n') {
-      if(isPreviewing){
-        if(previewObjectIndex-1>=0){
-          previewObjectIndex--;
-        }
-        else{
-         previewObjectIndex = selectedPoints.size()-1; 
-        }
-        if(previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()){
+
+  if (key == 'n') {
+    if (isPreviewing) {
+      if (previewObjectIndex-1>=0) {
+        previewObjectIndex--;
+      } else {
+        previewObjectIndex = selectedPoints.size()-1;
+      }
+      if (previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()) {
         CamPose tempPose = selectedPoints.get(previewObjectIndex);
         pid_globalPitch.setReference(tempPose.getSphericalPitch());
         pid_globalYaw.setReference(tempPose.getSphericalYaw());
         cam.setDistance(tempPose.getSphericalR()*drawingScale);
-        }
       }
+    }
     println("previewObjectIndex = "+previewObjectIndex);
   }
 
