@@ -61,7 +61,8 @@ int state = 0;
 //  state map:
 //  state 0: main
 //  state 1: preview
-//  state 2: add pose
+//  state 2: add GPS
+//  state 3: add pose
 
 PShape human;
 
@@ -244,7 +245,7 @@ void draw() {
   //println(frameRate);
   //skeleton model
   skeletonModel.beginDraw();
-  if (state==2) {
+  if (state==3) {
     skeletonModel.background(backGourd_edit);
   } else {
     skeletonModel.background(backGourd_review);
@@ -284,7 +285,7 @@ void draw() {
 
   for (int i = 0; i<selectedPoints.size (); i++) {
     float[] tempLoc = selectedPoints.get(i).getCartesian();
-    if (state==0||state==2||i!=previewObjectIndex) {
+    if (state==0||state==2||state==3||i!=previewObjectIndex) {
       skeletonModel.pushMatrix();
       skeletonModel.translate(tempLoc[0]*drawingScale, tempLoc[1]*drawingScale, tempLoc[2]*drawingScale);
       skeletonModel.stroke(0);
@@ -395,7 +396,13 @@ void draw() {
    int markerSize = 20;
    fill(0);
    text(""+(char)('A'+i),tempPos[0],tempPos[1]-markerSize/2);
-   fill(255);
+   if(state==1&&i==previewObjectIndex){
+     fill(selected_gps);
+   }
+   else{
+     fill(normal_gps);
+   }
+   
     ellipse(tempPos[0],tempPos[1],markerSize,markerSize);
     if(i>0){
       int[] tempPosPrev = selectedGPSs.get(i-1);
@@ -414,7 +421,7 @@ void rectGrid(int size, int tilesize, float y) {
     for (float z = -size/2; z <= size/2; z++) {
       //run two for loops, cycling through 10 different positions of rectangles
       skeletonModel.pushMatrix();
-      if (state==2) {
+      if (state==3) {
         skeletonModel.stroke(groundMesh_edit, map(dist(0, 0, x*tilesize, z*tilesize), 0, size/2*tilesize, 255, 0));//the rectangles close to you, are clear, while the ones farther from you, are much fainter
       } else {
         skeletonModel.stroke(groundMesh_review, map(dist(0, 0, x*tilesize, z*tilesize), 0, size/2*tilesize, 255, 0));//the rectangles close to you, are clear, while the ones farther from you, are much fainter
@@ -601,6 +608,10 @@ public void functionA_button(int theValue) {
 
 
   else if (state==2) {
+    
+  }
+  
+  else if (state==3) {
     //add points
     //      println("cam.getDistance = "+cam.getDistance());
     //      println("globalPitch = "+globalPitch);
@@ -610,6 +621,7 @@ public void functionA_button(int theValue) {
     float newY = R*sin(globalPitch);
     float newX = R*cos(globalPitch)*sin(globalYaw);
     selectedPoints.add(new CamPose(R, globalPitch, globalYaw, ""+(char)('A'+selectedPoints.size())));
+    setState(0);
   }
 }
 
@@ -617,7 +629,7 @@ public void functionA_button(int theValue) {
 public void functionB_button(int theValue) {
   println("a button event from functionB_button");
   if (state==0) {
-    // go to edit mode
+    // go to edit GPS mode
     setState(2);
   }
 
@@ -639,8 +651,12 @@ public void functionB_button(int theValue) {
   }
 
   else if (state==2) {
-    //to back to main
-    setState(0);
+//    //to back to main
+//    setState(0);
+  }
+    else if (state==3) {
+//        //to back to main
+//    setState(0);
   }
 }
 
@@ -656,6 +672,10 @@ public void functionC_button(int theValue) {
   }
 
   else if (state==2) {
+  }
+  
+  else if (state==3) {
+
   }
 }
 
@@ -681,11 +701,18 @@ public void functionD_button(int theValue) {
     //    //go back to main
     setState(0);
   }
+  
+  else if (state==3) {
+    //    //go back to main
+    setState(0);
+    println("selectedGPSs.size() = "+selectedGPSs.size());
+    selectedGPSs.remove(selectedGPSs.size()-1);
+  }
 }
 
 
 void setState(int s) {
-  println("State set to"+s);
+  println("State set to "+s);
   state = s;
   if (s==0) {
     cp5_mainLable.setText("Main");
@@ -720,7 +747,23 @@ void setState(int s) {
   }
 
   else if (s==2) {
-    cp5_mainLable.setText("Edit");
+    cp5_mainLable.setText("Edit: Please add a GPS");
+    
+    functionA_button.setLabel("None");
+    functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*1.1);
+    
+    functionB_button.setLabel("None");
+    functionB_button.setPosition(skeletonModel_w*0.4-skeletonModel_w/20, skeletonModel_h*1.1);
+    
+    functionC_button.setLabel("None");
+    functionC_button.setPosition(skeletonModel_w*0.6-skeletonModel_w/20, skeletonModel_h*1.1);
+    
+    functionD_button.setLabel("Exit");
+    functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9);
+  }
+
+  else if (s==3) {
+    cp5_mainLable.setText("Edit: Please add a camera pose");
     
     functionA_button.setLabel("Add");
     functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9);
@@ -734,10 +777,17 @@ void setState(int s) {
     functionD_button.setLabel("Exit");
     functionD_button.setPosition(skeletonModel_w*0.8-skeletonModel_w/20, skeletonModel_h*0.9);
   }
+  
+
 }
 
 void mouseClicked() {
+  if(state==2){
+    if(skeletonModel_w<=mouseX&&mouseX<=width&&videoStream_h<=mouseY&&mouseY<=height){
   println(mouseX+","+mouseY);
   selectedGPSs.add(new int[]{mouseX,mouseY});
+  setState(3);
+    }
+  }
 }
 
