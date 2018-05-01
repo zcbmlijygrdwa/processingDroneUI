@@ -38,7 +38,7 @@ Button functionB_button;
 Button functionC_button;
 Button functionD_button;
 
-boolean  ifDrawHumanObj = false;
+boolean  ifDrawHumanObj = true;
 boolean ifRosBridge = false;
 boolean ifLiveMap = false;
 
@@ -124,7 +124,7 @@ void setup() {
 
 
   cp5_mainLable = cp5.addTextlabel("cp5_mainLable")
-    .setText("Main")
+    .setText("MAIN")
       .setPosition(200, 50)
         .setColorValue(0xffffff00)
           .setFont(createFont("Georgia", 20))
@@ -390,10 +390,10 @@ void draw() {
     image(mapImage, skeletonModel_w, videoStream_h, map_w, map_h);
     pushMatrix();
     translate(skeletonModel_w+350, skeletonModel_w+50);
-    float[] trans = DroneFlightEmulator.getInstance().nextTranslation(0,0);
-    translate(trans[0],trans[1]);
+    //float[] trans = DroneFlightEmulator.getInstance().nextTranslation(0,0);
+    //translate(trans[0],trans[1]);
     rotate(-PI/2);
-    rotate(      (DroneFlightEmulator.getInstance().nextRotation(0)));
+    //rotate(      (DroneFlightEmulator.getInstance().nextRotation(0)));
     imageMode (CENTER); 
     image(plane, 0, 0);
     imageMode (CORNER); 
@@ -412,6 +412,22 @@ void draw() {
     }
 
     ellipse(tempPos[0], tempPos[1], markerSize, markerSize);
+    //next week
+//    if(selectedPoints.size()>i){
+//    pushMatrix();
+//    float tempYaw = selectedPoints.get(i).getSphericalYaw();
+//    float drawCameraRadius = 50;
+//    float tempX = drawCameraRadius*sin(tempYaw);
+//    float tempY = drawCameraRadius*cos(tempYaw);
+//    
+//    println("tempYaw = "+tempYaw);
+//    translate(tempPos[0]-tempX, tempPos[1]-tempY);
+//    rotate(PI-tempYaw);
+//    imageMode (CENTER); 
+//    image(plane, 0, 0);
+//    imageMode (CORNER); 
+//    popMatrix();
+//    }
     if (i>0) {
       int[] tempPosPrev = selectedGPSs.get(i-1);
       line(tempPosPrev[0], tempPosPrev[1], tempPos[0], tempPos[1]);
@@ -505,7 +521,7 @@ void keyPressed() {
         cp5_mainLable.setText("Preview Camera Pose: "+tempPose.getTitle());
       }
     } else {
-      cp5_mainLable.setText("Main");
+      cp5_mainLable.setText("MAIN");
     }
     println("state = "+state);
   }
@@ -693,7 +709,7 @@ void setState(int s) {
   println("State set to "+s);
   state = s;
   if (s==0) {
-    cp5_mainLable.setText("Main");
+    cp5_mainLable.setText(" ");  //"main"
 
     functionA_button.setLabel("Preview");
     functionA_button.setPosition(skeletonModel_w*0.2-skeletonModel_w/20, skeletonModel_h*0.9);
@@ -754,7 +770,7 @@ void setState(int s) {
 void mouseClicked() {
   if (state==2) {
     if (skeletonModel_w<=mouseX&&mouseX<=width&&videoStream_h<=mouseY&&mouseY<=height) {
-      println(mouseX+","+mouseY);
+      //println(mouseX+","+mouseY);
       selectedGPSs.add(new int[] {
         mouseX, mouseY
       }
