@@ -1,4 +1,5 @@
 class CamPose {
+  String title;
   float[] cartesianCoord;
   float[] sphericalCoord;
 
@@ -15,6 +16,24 @@ class CamPose {
     sphericalCoord = new float[] {
       R, pitch, yaw
     };
+    
+    title = "Untitled";
+  }
+  
+    public CamPose(float R, float pitch, float yaw,String  title) {
+
+    float newZ = R*cos(yaw)*cos(pitch);
+    float newY = R*sin(pitch);
+    float newX = R*cos(pitch)*sin(yaw);
+
+    cartesianCoord = new float[] {
+      newX, newY, newZ
+    };
+    sphericalCoord = new float[] {
+      R, pitch, yaw
+    };
+    
+    this.title = title;
   }
   
   

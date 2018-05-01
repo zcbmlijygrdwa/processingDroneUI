@@ -53,10 +53,10 @@ PShape human;
 PeasyCam cam;
 float globalPitch = 0;
 float globalYaw = 0;
+float globalDist = 400;
 
 PIDController pid_globalPitch;
 PIDController pid_globalYaw;
-
 
 float drawingScale = 50;
 
@@ -102,7 +102,6 @@ void setup() {
 
   pid_globalPitch = new PIDController(0.1, 0.2, 0);
   pid_globalYaw = new PIDController(0.1, 0.2, 0);
-
 
 
   int trajectoryPlanningSampleRate = 100; //Hz
@@ -183,14 +182,8 @@ void setup() {
 
 void draw() {
 
-  //controllers update
-  if (pid_globalPitch.isOn()) {
-    globalPitch = pid_globalPitch.process(globalPitch);
-  }
 
-  if (pid_globalYaw.isOn()) {
-    globalYaw = pid_globalYaw.process(globalYaw);
-  }
+  
 
   //println(frameRate);
   //skeleton model
@@ -201,6 +194,16 @@ void draw() {
     skeletonModel.background(backGourd_review);
   }
 
+
+  //controllers update
+  if (pid_globalPitch.isOn()) {
+    globalPitch = pid_globalPitch.process(globalPitch);
+  }
+
+  if (pid_globalYaw.isOn()) {
+    globalYaw = pid_globalYaw.process(globalYaw);
+  }
+  
   skeletonModel.rotateX(PI-globalPitch);
   skeletonModel.rotateY(PI-globalYaw);
 
@@ -226,6 +229,7 @@ void draw() {
   //println("selectedPoints.size () = "+selectedPoints.size());
 
   for (int i = 0; i<selectedPoints.size (); i++) {
+    if(isPreviewing&&i==previewObjectIndex) continue;
     skeletonModel.pushMatrix();
     float[] tempLoc = selectedPoints.get(i).getCartesian();
     skeletonModel.translate(tempLoc[0], tempLoc[1], tempLoc[2]);
@@ -383,9 +387,55 @@ void keyPressed() {
     println("ifDrawHumanObj = "+ifDrawHumanObj);
   }
 
-  if (key == 'h') {
+  if (key == 'p') {
     isPreviewing = !isPreviewing;
+    
+    if(isPreviewing){
+      previewObjectIndex = 0;
+      if(previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()){
+        CamPose tempPose = selectedPoints.get(previewObjectIndex);
+        pid_globalPitch.setReference(tempPose.getSphericalPitch());
+        pid_globalYaw.setReference(tempPose.getSphericalYaw());
+        cam.setDistance(tempPose.getSphericalR()*drawingScale);
+        }
+    }
     println("isPreviewing = "+isPreviewing);
+  }
+  
+    if (key == 'm') {
+      if(isPreviewing){
+        if(previewObjectIndex+1<selectedPoints.size()){
+          previewObjectIndex++;
+        }
+        else{
+         previewObjectIndex = 0; 
+        }
+        if(previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()){
+        CamPose tempPose = selectedPoints.get(previewObjectIndex);
+        pid_globalPitch.setReference(tempPose.getSphericalPitch());
+        pid_globalYaw.setReference(tempPose.getSphericalYaw());
+        cam.setDistance(tempPose.getSphericalR()*drawingScale);
+        }
+      }
+    println("previewObjectIndex = "+previewObjectIndex);
+  }
+  
+    if (key == 'n') {
+      if(isPreviewing){
+        if(previewObjectIndex-1>=0){
+          previewObjectIndex--;
+        }
+        else{
+         previewObjectIndex = selectedPoints.size()-1; 
+        }
+        if(previewObjectIndex>=0&&previewObjectIndex<selectedPoints.size()){
+        CamPose tempPose = selectedPoints.get(previewObjectIndex);
+        pid_globalPitch.setReference(tempPose.getSphericalPitch());
+        pid_globalYaw.setReference(tempPose.getSphericalYaw());
+        cam.setDistance(tempPose.getSphericalR()*drawingScale);
+        }
+      }
+    println("previewObjectIndex = "+previewObjectIndex);
   }
 
 
